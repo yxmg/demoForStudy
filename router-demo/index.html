@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>router-demo</title>
+  <script src="../lib/vue.js"></script>
+  <script src="../lib/vue-router.js"></script>
+  <style>
+    .router--content {
+      width: 500px;
+      height: 1300px;
+      border: 1px solid #000;
+    }
+
+    .router__foo {
+      background-color: lightblue;
+    }
+
+    .router__bar {
+      background-color: lightcoral;
+    }
+
+    .slide-right-enter {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+    .slide-right-enter-active {
+      transition: .3s;
+    }
+    /* enter-to其实可以不用写, 没有显性写明，就是默认的opacity: 1;transform: none;  */
+    .slide-right-enter-to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .slide-left-enter {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    .slide-left-enter-active {
+      transition: .3s;
+    }
+    /* enter-to其实可以不用写, 没有显性写明，就是默认的opacity: 1;transform: none;  */
+    .slide-left-enter-to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <router-link to="/foo">Go to Foo</router-link>
+  <router-link to="/bar">Go to Bar</router-link>
+
+  <button>go to foo</button>
+  <button>go to bar</button>
+
+  <transition :name="transitionName">
+    <router-view></router-view>
+  </transition>
+
+</div>
+
+<script src="index.js"></script>
+</body>
+</html>
