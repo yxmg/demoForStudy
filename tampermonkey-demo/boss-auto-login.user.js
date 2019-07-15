@@ -7,26 +7,74 @@
 // @match        *://*.x-vipay.com/boss/*
 // @match        *://uat2.vipaylife.com/boss2/*
 // @require      https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js
-// @require      https://cdn.bootcss.com/limonte-sweetalert2/7.28.5/sweetalert2.all.js
+// @require      https://cdn.jsdelivr.net/npm/sweetalert2@8
+// @require      https://cdn.bootcss.com/jquery-cookie/1.4.1/jquery.cookie.min.js
+// @require      https://cdn.bootcss.com/jquery-contextmenu/2.8.0/jquery.contextMenu.min.js
+// @require      https://cdn.bootcss.com/jquery-contextmenu/2.8.0/jquery.ui.position.min.js
+// @resource     contextMenuCss https://cdn.bootcss.com/jquery-contextmenu/2.8.0/jquery.contextMenu.min.css
+// @resource     fontAwesomeIconCss https://cdn.bootcss.com/font-awesome/5.10.0-11/css/fontawesome.min.css
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_setClipboard
 // @grant        unsafeWindow
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
+// @grant       GM_getResourceText
 // @run-at       document-body
 // @noframes
 // ==/UserScript==
 (function () {
+    // @require      https://cdn.bootcss.com/limonte-sweetalert2/7.28.5/sweetalert2.all.js
+    /**
+     * 导入外部css
+     */
+    var contextMenuCss = GM_getResourceText("contextMenuCss");
+    var fontAwesomeIconCss = GM_getResourceText("fontAwesomeIconCss");
+    GM_addStyle(contextMenuCss);
+    GM_addStyle(fontAwesomeIconCss);
+
+    /**
+     * 自定义样式
+     */
+    // swal默认样式调整
+    GM_addStyle('body.swal2-height-auto{ height: inherit !important }')
+    // contextMenu样式调整
+    GM_addStyle('.context-menu-icon{font-size: 16px} .context-menu-icon::before{ font-family: "Ionicons" }')
+    // 主按钮样式
+    GM_addStyle(`.al-main-btn{
+        position: fixed;      
+        width: 40px;
+        height: 40px;
+        right: 0;
+        z-index: 999;
+        background: #fff;
+        border-radius: 50%;
+        border: 1px solid;
+        left: calc(50% + 220px);
+        top: calc(50% - 175px);
+        box-shadow: 0 2px 11px 0 rgba(0,0,0,.16);
+    }
+    
+    .al__logo{
+        width: 36px;
+        height: 36px;
+    }
+    `)
+    /**
+     * 常量部分
+     */
+    let APP_INSTANCE = null
+
+
     /**
      * 脚本触发条件
      */
     /**
      * 用装饰器模式对原生replaceState和pushState做处理
      */
-    var _wr = function(type) {
+    var _wr = function (type) {
         var orig = history[type];
-        return function() {
+        return function () {
             var rv = orig.apply(this, arguments);
             var e = new Event(type);
             e.arguments = arguments;
@@ -37,21 +85,129 @@
     history.pushState = _wr('pushState');
     history.replaceState = _wr('replaceState');
 
-    // hash模式
-    window.addEventListener('hashchange',function(event){
-        console.log(event);
-    })
-    // history模式
-    window.addEventListener('popstate', function(event) {
-        console.log(event);
-    })
-    window.addEventListener('replaceState', function(e) {
-        console.log(e, "e")
+    window.addEventListener('replaceState', function (event) {
+        console.log('replaceState')
+        console.log(location.href, "location.href")
     });
-    window.addEventListener('pushState', function(e) {
-        console.log(e, "e")
+    window.addEventListener('pushState', function (event) {
+        console.log('pushState')
+        console.log(location.href, "location.href")
     });
 
+
+    function addMainBtn() {
+        const btnHtml = `<span>
+<a id="mainBtn" class="al-main-btn" href="javascript:void(0);">
+    <img class="al__logo" src="https://www.easyicon.net/api/resizeApi.php?id=1210135&size=72">
+</a>
+</span>`
+
+        const login = $('.login')
+        login.prepend(btnHtml)
+    }
+
+    async function addAccount() {
+        const { value: formValues } = Swal.mixin({
+            input: 'text',
+            confirmButtonText: 'Next &rarr;',
+            showCancelButton: true,
+            progressSteps: ['1', '2', '3']
+        })
+            .queue([
+                {
+                    title: '请输入要自动登录的账户名',
+                    text: 'Chaining swal2 modals is easy'
+                },
+                {
+                    title: '请输入密码',
+                    text: 'Chaining swal2 modals is easy'
+                },
+                {
+                    title: '请输入密钥',
+                    text: 'Chaining swal2 modals is easy'
+                },
+            ])
+
+        if (formValues) {
+            Swal.fire(JSON.stringify(formValues))
+        }
+    }
+
+    function init() {
+        return new Promise((resolve) => {
+            const timer = setInterval(() => {
+                APP_INSTANCE = document.querySelector('#app').__vue__
+                if (APP_INSTANCE) {
+                    clearInterval(timer)
+                    resolve(APP_INSTANCE)
+                }
+            }, 500)
+        })
+    }
+
+    function initMenu() {
+        const currentAccountItem = {
+            name: '当前账户: BossAdmin',
+            icon: function () {
+                return 'context-menu-icon ivu-icon-md-key'
+            },
+        }
+        const viewAccountItem = {
+            name: '查看账户',
+            isHtmlName: true,
+            icon: function () {
+                return 'context-menu-icon ivu-icon-md-person'
+            }
+        }
+        const addAccountItem = {
+            name: '添加账户',
+            isHtmlName: true,
+            icon: function () {
+                return 'context-menu-icon ivu-icon-md-add'
+            },
+            callback: function () {
+                addAccount()
+            }
+        }
+        const closeItem = {
+            name: '关闭插件',
+            icon: function () {
+                return 'context-menu-icon ivu-icon-md-close'
+            }
+        }
+        $.contextMenu({
+            selector: '.al-main-btn',
+            trigger: 'left',
+            items: {
+                currentAccountItem,
+                viewAccountItem,
+                addAccountItem,
+                closeItem
+            }
+        });
+
+        $('.al-main-btn').on('click', function (e) {
+            console.log('clicked', this);
+        })
+    }
+
+    function wait(second) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve()
+            }, second * 1000)
+        })
+    }
+
+    async function main() {
+        await init()
+        // configAccount()
+        await wait(1)
+        addMainBtn()
+        initMenu()
+    }
+
+    main()
 
 
     /**
