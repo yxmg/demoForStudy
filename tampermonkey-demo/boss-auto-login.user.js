@@ -11,6 +11,7 @@
 // @require      https://cdn.bootcss.com/jquery-cookie/1.4.1/jquery.cookie.min.js
 // @require      https://cdn.bootcss.com/jquery-contextmenu/2.8.0/jquery.contextMenu.min.js
 // @require      https://cdn.bootcss.com/jquery-contextmenu/2.8.0/jquery.ui.position.min.js
+// @require      https://cdn.bootcss.com/localforage/1.7.3/localforage.min.js
 // @resource     contextMenuCss https://cdn.bootcss.com/jquery-contextmenu/2.8.0/jquery.contextMenu.min.css
 // @resource     fontAwesomeIconCss https://cdn.bootcss.com/font-awesome/5.10.0-11/css/fontawesome.min.css
 // @grant        GM_getValue
@@ -33,11 +34,16 @@
     GM_addStyle(contextMenuCss);
     GM_addStyle(fontAwesomeIconCss);
 
+    /* 表格CSS */
+    GM_addStyle('table.my_baidu_link_table {margin: 0 auto;}');
+    GM_addStyle('.my_baidu_link_table>tbody>tr>td, .my_baidu_link_table>tbody>tr>th, .my_baidu_link_table>tfoot>tr>td, .my_baidu_link_table>tfoot>tr>th, .my_baidu_link_table>thead>tr>td, .my_baidu_link_table>thead>tr>th {padding: 10px;min-width: 150px;line-height: 1.42857143;vertical-align: top;border: 1px solid #ddd;text-align:center;color:#3F51B5 !important}');
+    GM_addStyle('.my_baidu_link_table>tbody>tr>td>a, .my_baidu_link_table>tbody>tr>th>a, .my_baidu_link_table>tfoot>tr>td>a, .my_baidu_link_table>tfoot>tr>th>a, .my_baidu_link_table>thead>tr>td>a, .my_baidu_link_table>thead>tr>th>a {color: #00bfff/* !important */;/* text-decoration: none !important; */}');
+
     /**
      * 自定义样式
      */
     // swal默认样式调整
-    GM_addStyle('body.swal2-height-auto{ height: inherit !important }')
+    GM_addStyle('body.swal2-height-auto{ height: inherit !important } .swal2-popup{width: auto;min-width: 32em;}')
     // contextMenu样式调整
     GM_addStyle('.context-menu-icon{font-size: 16px} .context-menu-icon::before{ font-family: "Ionicons" }')
     // 主按钮样式
@@ -55,15 +61,31 @@
         box-shadow: 0 2px 11px 0 rgba(0,0,0,.16);
     }
     
+    .al-pre{
+        color: #abb2bf;
+        background: #282c34;
+        border-radius: 4px;
+        padding: 8px;
+        margin-top: 4px;
+        margin-bottom: 0;
+    }
+    
+    
     .al__logo{
         width: 36px;
         height: 36px;
+    }
+    
+    .al-icon-selected.active{
+        color: #87d068 !important;
     }
     `)
     /**
      * 常量部分
      */
     let APP_INSTANCE = null
+    const LOCALSTORAGE_NAME = 'AL-CONF'
+    const LOCALSTORAGE_IS_AUTO_LOGIN = 'IS-AUTO-LOGIN'
 
 
     /**
@@ -85,16 +107,9 @@
     history.pushState = _wr('pushState');
     history.replaceState = _wr('replaceState');
 
-    window.addEventListener('replaceState', function (event) {
-        console.log('replaceState')
-        console.log(location.href, "location.href")
-    });
-    window.addEventListener('pushState', function (event) {
-        console.log('pushState')
-        console.log(location.href, "location.href")
-    });
-
-
+    /**
+     * 程序执行部分
+     */
     function addMainBtn() {
         const btnHtml = `<span>
 <a id="mainBtn" class="al-main-btn" href="javascript:void(0);">
@@ -107,7 +122,7 @@
     }
 
     async function addAccount() {
-        const { value: formValues } = Swal.mixin({
+        const { value: formValues } = await Swal.mixin({
             input: 'text',
             confirmButtonText: 'Next &rarr;',
             showCancelButton: true,
@@ -116,24 +131,111 @@
             .queue([
                 {
                     title: '请输入要自动登录的账户名',
-                    text: 'Chaining swal2 modals is easy'
                 },
                 {
                     title: '请输入密码',
-                    text: 'Chaining swal2 modals is easy'
+                    text: '如果忘记密码，可以用其他账户在【操作员管理】进行重置密码操作'
                 },
                 {
                     title: '请输入密钥',
-                    text: 'Chaining swal2 modals is easy'
+                    html: 'PAY_BOSS 密钥查询SQL:<pre class="al-pre">SELECT SECRET_KEY FROM BOSS_OPERATOR WHERE LOGIN_NAME = \'用户名\'</pre>'
                 },
             ])
 
         if (formValues) {
-            Swal.fire(JSON.stringify(formValues))
+            const [username, password, secretKey] = formValues
+            let accountList = await localforage.getItem(LOCALSTORAGE_NAME)
+            accountList = Array.isArray(accountList) ? accountList : []
+            accountList.push({ username, password, secretKey })
+            localforage.setItem(LOCALSTORAGE_NAME, accountList)
         }
     }
 
+    async function configAccount() {
+        const accountList = await localforage.getItem(LOCALSTORAGE_NAME)
+        let bodyRowHTML = ''
+        const emptyHTML = `<div class="table--empty">暂无数据</div>`
+        accountList.forEach((item, index) => {
+            bodyRowHTML += `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${item.username}</td>
+                <td>${item.password}</td>
+                <td>${item.secretKey}</td>
+                <td>
+                    <a class="al-icon-selected ${item.isActive ? 'active' : ''}" 
+                        href="javascript:void(0);" onclick="_selectAccount(this,${index})">
+                        <i class="ivu-icon ivu-icon-md-checkmark-circle-outline"></i>
+                    </a>
+                    <a href="javascript:void(0);" onclick="_deleteAccount(this,${index})">
+                        <i class="ivu-icon ivu-icon-md-trash"></i>
+                    </a>
+                </td>
+            </tr>`
+        })
+
+
+        const tableHTML = `
+        <table class="my_baidu_link_table">
+            <thead>
+                <tr>
+                    <th><i class="ivu-icon ivu-icon-md-at"></i></th>
+                    <th><b>账户名</b></th>
+                    <th><b>密码</b></th>
+                    <th><b>密钥</b></th>
+                    <th><b>操作</b></th>
+                </tr>
+            </thead>
+            <tbody>
+                ${bodyRowHTML}
+            </tbody>
+        </table>
+        `
+        Swal.fire({
+            title: '账户列表',
+            html: accountList.length ? tableHTML : emptyHTML,
+        })
+    }
+
+    async function deleteAccount(element, index) {
+        let accountList = await localforage.getItem(LOCALSTORAGE_NAME)
+        const currentRow = element.parentElement.parentElement
+        currentRow.remove()
+        accountList.splice(index, 1)
+        localforage.setItem(LOCALSTORAGE_NAME, accountList)
+        refreshMenu()
+    }
+
+    async function selectAccount(element, index) {
+        let accountList = await localforage.getItem(LOCALSTORAGE_NAME)
+        accountList.forEach(item => {
+            item.isActive = false
+        })
+        accountList[index].isActive = true
+        await localforage.setItem(LOCALSTORAGE_NAME, accountList)
+        $('.al-icon-selected.active').removeClass('active')
+        $(element).addClass('active')
+        refreshMenu()
+    }
+
+    function notify(type = 'success', content = '操作成功') {
+        // warning, error, success, info, and question
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+
+        Toast.fire({
+            type: type,
+            title: content
+        })
+    }
+
     function init() {
+        unsafeWindow._deleteAccount = deleteAccount
+        unsafeWindow._selectAccount = selectAccount
         return new Promise((resolve) => {
             const timer = setInterval(() => {
                 APP_INSTANCE = document.querySelector('#app').__vue__
@@ -145,18 +247,32 @@
         })
     }
 
-    function initMenu() {
+    async function initMenu() {
+        const accountList = await localforage.getItem(LOCALSTORAGE_NAME)
+        if (accountList) {
+            await localforage.setItem(LOCALSTORAGE_NAME, [])
+        }
+        const activeAccount = accountList.find(item => item.isActive)
+        const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
+        $('.al-main-btn').data('isAutoLogin', isAutoLogin)
+
         const currentAccountItem = {
-            name: '当前账户: BossAdmin',
+            name: `当前账户: ${activeAccount && activeAccount.username}`,
             icon: function () {
                 return 'context-menu-icon ivu-icon-md-key'
             },
+            callback: function () {
+                login()
+            }
         }
         const viewAccountItem = {
             name: '查看账户',
             isHtmlName: true,
             icon: function () {
                 return 'context-menu-icon ivu-icon-md-person'
+            },
+            callback: function () {
+                configAccount()
             }
         }
         const addAccountItem = {
@@ -169,12 +285,35 @@
                 addAccount()
             }
         }
-        const closeItem = {
-            name: '关闭插件',
+        const openItem = {
+            name: '自动登录',
             icon: function () {
-                return 'context-menu-icon ivu-icon-md-close'
+                return 'context-menu-icon ivu-icon-md-aperture'
+            },
+            callback() {
+                localforage.setItem(LOCALSTORAGE_IS_AUTO_LOGIN, true)
+                notify('success', '已开启自动登录')
+                this.data('isAutoLogin', true);
+            },
+            disabled(key, opt) {
+                return this.data('isAutoLogin')
             }
         }
+        const closeItem = {
+            name: '关闭自动登录',
+            icon: function () {
+                return 'context-menu-icon ivu-icon-md-close'
+            },
+            callback() {
+                localforage.setItem(LOCALSTORAGE_IS_AUTO_LOGIN, false)
+                notify('success', '已关闭自动登录')
+                this.data('isAutoLogin', false);
+            },
+            disabled(key, opt) {
+                return !this.data('isAutoLogin')
+            }
+        }
+
         $.contextMenu({
             selector: '.al-main-btn',
             trigger: 'left',
@@ -182,13 +321,16 @@
                 currentAccountItem,
                 viewAccountItem,
                 addAccountItem,
+                openItem,
                 closeItem
             }
         });
+    }
 
-        $('.al-main-btn').on('click', function (e) {
-            console.log('clicked', this);
-        })
+    function refreshMenu() {
+        // 刷新右键菜单
+        $.contextMenu('destroy')
+        initMenu()
     }
 
     function wait(second) {
@@ -199,15 +341,87 @@
         })
     }
 
+    function updateValue(el, value) {
+        el.value = value
+        // change事件 new UIEvent('change')
+        el.dispatchEvent(new InputEvent('input'))
+    }
+
+    async function firstLogin(account) {
+        let { username, password } = account
+        const usernameInputEl = await waitForElement('.ivu-form-item:nth-of-type(1) input')
+        const passwordInputEl = await waitForElement('.ivu-form-item:nth-of-type(2) input')
+
+        updateValue(usernameInputEl, username)
+        updateValue(passwordInputEl, password)
+
+        const btnEl = $('.spec')
+        btnEl.click()
+    }
+
+    function generateAuthCode(secretKey) {
+        let ctime = Math.floor((new Date() - 0) / 30000);
+        return HOTP(secretKey, ctime);
+    }
+
+    function waitForElement(selector) {
+        return new Promise((resolve) => {
+            const timer = setInterval(() => {
+                const element = $(selector)[0]
+                if (element) {
+                    clearInterval(timer)
+                    resolve(element)
+                }
+            }, 500)
+        })
+    }
+
+    async function secondaryValidate(secretKey) {
+        const authCodeInputEl = await waitForElement('.card_google input')
+        updateValue(authCodeInputEl, generateAuthCode(secretKey))
+        const submitBtnEl = $('.card_google .ivu-btn:nth-of-type(2)')
+        submitBtnEl.click()
+    }
+
+    async function login() {
+        const accountList = await localforage.getItem(LOCALSTORAGE_NAME)
+        const activeAccount = accountList.find(item => item.isActive)
+        const { username, password, secretKey } = activeAccount
+        firstLogin({ username, password })
+        secondaryValidate(secretKey)
+    }
+
+    function autoLogin() {
+        // 监听事件
+        window.addEventListener('replaceState', function (event) {
+            if (location.hash === '#/login' || location.pathname === '/login') {
+                login()
+            }
+        });
+        window.addEventListener('pushState', function (event) {
+            if (location.hash === '#/login' || location.pathname === '/login') {
+                login()
+            }
+        });
+        login()
+    }
+
     async function main() {
+        const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
         await init()
-        // configAccount()
         await wait(1)
         addMainBtn()
         initMenu()
+        isAutoLogin && autoLogin()
     }
 
     main()
+
+    window.addEventListener('pushState', function (event) {
+        if (location.hash === '#/login' || location.pathname === '/login') {
+            main()
+        }
+    });
 
 
     /**
