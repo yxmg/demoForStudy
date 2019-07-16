@@ -26,6 +26,7 @@
 // ==/UserScript==
 (function () {
     // @require      https://cdn.bootcss.com/limonte-sweetalert2/7.28.5/sweetalert2.all.js
+    /********************************** CSS相关-开始 **********************************/
     /**
      * 导入外部css
      */
@@ -46,40 +47,11 @@
     GM_addStyle('body.swal2-height-auto{ height: inherit !important } .swal2-popup{width: auto;min-width: 32em;}')
     // contextMenu样式调整
     GM_addStyle('.context-menu-icon{font-size: 16px} .context-menu-icon::before{ font-family: "Ionicons" }')
-    // 主按钮样式
-    GM_addStyle(`.al-main-btn{
-        position: fixed;      
-        width: 40px;
-        height: 40px;
-        right: 0;
-        z-index: 999;
-        background: #fff;
-        border-radius: 50%;
-        border: 1px solid;
-        left: calc(50% + 220px);
-        top: calc(50% - 175px);
-        box-shadow: 0 2px 11px 0 rgba(0,0,0,.16);
-    }
-    
-    .al-pre{
-        color: #abb2bf;
-        background: #282c34;
-        border-radius: 4px;
-        padding: 8px;
-        margin-top: 4px;
-        margin-bottom: 0;
-    }
-    
-    
-    .al__logo{
-        width: 36px;
-        height: 36px;
-    }
-    
-    .al-icon-selected.active{
-        color: #87d068 !important;
-    }
+    // 自定义样式
+    GM_addStyle(`.al-main-btn{ position: fixed; width: 40px; height: 40px; right: 0; z-index: 999; background: #fff; border-radius: 50%; border: 1px solid; left: calc(50% + 220px); top: calc(50% - 175px); box-shadow: 0 2px 11px 0 rgba(0,0,0,.16); } .al-pre{ color: #abb2bf; background: #282c34; border-radius: 4px; padding: 8px; margin-top: 4px; margin-bottom: 0; } .al__logo{ width: 36px; height: 36px; } .al-icon-selected.active{ color: #87d068 !important; }
     `)
+    /********************************** CSS相关-结束 **********************************/
+
     /**
      * 常量部分
      */
@@ -88,9 +60,6 @@
     const LOCALSTORAGE_IS_AUTO_LOGIN = 'IS-AUTO-LOGIN'
 
 
-    /**
-     * 脚本触发条件
-     */
     /**
      * 用装饰器模式对原生replaceState和pushState做处理
      */
@@ -107,9 +76,51 @@
     history.pushState = _wr('pushState');
     history.replaceState = _wr('replaceState');
 
-    /**
-     * 程序执行部分
-     */
+    /********************************** 工具函数-开始 **********************************/
+    function notify(type = 'success', content = '操作成功') {
+        // warning, error, success, info, and question
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+
+        Toast.fire({
+            type: type,
+            title: content
+        })
+    }
+
+    function wait(second) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve()
+            }, second * 1000)
+        })
+    }
+
+    function updateValue(el, value) {
+        el.value = value
+        // change事件 new UIEvent('change')
+        el.dispatchEvent(new InputEvent('input'))
+    }
+
+    function waitForElement(selector) {
+        return new Promise((resolve) => {
+            const timer = setInterval(() => {
+                const element = $(selector)[0]
+                if (element) {
+                    clearInterval(timer)
+                    resolve(element)
+                }
+            }, 500)
+        })
+    }
+
+    /********************************** 工具函数-结束 **********************************/
+
+    /********************************** 主流程-开始 **********************************/
     function addMainBtn() {
         const btnHtml = `<span>
 <a id="mainBtn" class="al-main-btn" href="javascript:void(0);">
@@ -218,19 +229,10 @@
         refreshMenu()
     }
 
-    function notify(type = 'success', content = '操作成功') {
-        // warning, error, success, info, and question
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000
-        });
-
-        Toast.fire({
-            type: type,
-            title: content
-        })
+    function refreshMenu() {
+        // 刷新右键菜单
+        $.contextMenu('destroy')
+        initMenu()
     }
 
     function init() {
@@ -249,12 +251,15 @@
 
     async function initMenu() {
         const accountList = await localforage.getItem(LOCALSTORAGE_NAME)
-        if (accountList) {
+        const selector = $('.al-main-btn')
+        const isEmptyList = !accountList || !accountList.length
+        if (isEmptyList) {
             await localforage.setItem(LOCALSTORAGE_NAME, [])
         }
         const activeAccount = accountList.find(item => item.isActive)
         const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
-        $('.al-main-btn').data('isAutoLogin', isAutoLogin)
+        selector.data('hasActiveAccount', !activeAccount)
+        selector.data('isAutoLogin', isAutoLogin)
 
         const currentAccountItem = {
             name: `当前账户: ${activeAccount && activeAccount.username}`,
@@ -263,6 +268,9 @@
             },
             callback: function () {
                 login()
+            },
+            disabled(key, opt) {
+                return this.data('hasActiveAccount')
             }
         }
         const viewAccountItem = {
@@ -327,26 +335,7 @@
         });
     }
 
-    function refreshMenu() {
-        // 刷新右键菜单
-        $.contextMenu('destroy')
-        initMenu()
-    }
-
-    function wait(second) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve()
-            }, second * 1000)
-        })
-    }
-
-    function updateValue(el, value) {
-        el.value = value
-        // change事件 new UIEvent('change')
-        el.dispatchEvent(new InputEvent('input'))
-    }
-
+    /********************************** 登录操作-开始 **********************************/
     async function firstLogin(account) {
         let { username, password } = account
         const usernameInputEl = await waitForElement('.ivu-form-item:nth-of-type(1) input')
@@ -364,18 +353,6 @@
         return HOTP(secretKey, ctime);
     }
 
-    function waitForElement(selector) {
-        return new Promise((resolve) => {
-            const timer = setInterval(() => {
-                const element = $(selector)[0]
-                if (element) {
-                    clearInterval(timer)
-                    resolve(element)
-                }
-            }, 500)
-        })
-    }
-
     async function secondaryValidate(secretKey) {
         const authCodeInputEl = await waitForElement('.card_google input')
         updateValue(authCodeInputEl, generateAuthCode(secretKey))
@@ -390,8 +367,13 @@
         firstLogin({ username, password })
         secondaryValidate(secretKey)
     }
+    /********************************** 登录操作-开始 **********************************/
 
-    function autoLogin() {
+    async function autoLogin() {
+        const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
+        if (!isAutoLogin) {
+            return
+        }
         // 监听事件
         window.addEventListener('replaceState', function (event) {
             if (location.hash === '#/login' || location.pathname === '/login') {
@@ -403,7 +385,6 @@
                 login()
             }
         });
-        login()
     }
 
     async function main() {
@@ -412,10 +393,12 @@
         await wait(1)
         addMainBtn()
         initMenu()
-        isAutoLogin && autoLogin()
+        isAutoLogin && login()
     }
 
     main()
+
+    autoLogin()
 
     window.addEventListener('pushState', function (event) {
         if (location.hash === '#/login' || location.pathname === '/login') {
@@ -423,7 +406,10 @@
         }
     });
 
+    /********************************** 主流程-结束 **********************************/
 
+
+    /********************************** 其他-开始 **********************************/
     /**
      * 控制台调试输出样式
      * @param {String} string [要加样式的内容]
@@ -637,5 +623,6 @@
         return result
     }
 
+    /********************************** 其他-结束 **********************************/
 
 })()
