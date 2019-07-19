@@ -421,14 +421,16 @@
             return
         }
         // 监听事件
-        window.addEventListener('replaceState', function (event) {
+        window.addEventListener('replaceState', async function (event) {
+            const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
             if (location.hash === '#/login' || location.pathname === '/login') {
-                login()
+                isAutoLogin && login()
             }
         });
-        window.addEventListener('pushState', function (event) {
+        window.addEventListener('pushState', async function (event) {
+            const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
             if (location.hash === '#/login' || location.pathname === '/login') {
-                login()
+                isAutoLogin && login()
             }
         });
     }
@@ -436,7 +438,7 @@
     async function main() {
         const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
         await init()
-        await wait(1)
+        await wait(0.5)
         addMainBtn()
         initMenu()
         watchRoute(APP_INSTANCE.$router, (to, from, next) => {
