@@ -26,6 +26,14 @@
 // ==/UserScript==
 (function () {
     // @require      https://cdn.bootcss.com/limonte-sweetalert2/7.28.5/sweetalert2.all.js
+    /********************************** 脚本匹配-开始 **********************************/
+    const isLocalHost = location.hostname === 'localhost'
+    const isOtherPort = location.port !== '8000'
+    if (isLocalHost && isOtherPort) {
+        return
+    }
+    /********************************** 脚本匹配-开始 **********************************/
+
     /********************************** CSS相关-开始 **********************************/
     /**
      * 导入外部css
@@ -49,6 +57,11 @@
     GM_addStyle('.context-menu-icon{font-size: 16px} .context-menu-icon::before{ font-family: "Ionicons" }')
     // 自定义样式
     GM_addStyle(`.al-main-btn{ position: fixed; width: 40px; height: 40px; right: 0; z-index: 999; background: #fff; border-radius: 50%; border: 1px solid; left: calc(50% + 220px); top: calc(50% - 175px); box-shadow: 0 2px 11px 0 rgba(0,0,0,.16); } .al-pre{ color: #abb2bf; background: #282c34; border-radius: 4px; padding: 8px; margin-top: 4px; margin-bottom: 0; } .al__logo{ width: 36px; height: 36px; } .al-icon-selected.active{ color: #87d068 !important; }
+    .al-main-btn.after-login{
+        top: 60px;
+        right: 10px;
+        left: auto; 
+    }
     `)
     /********************************** CSS相关-结束 **********************************/
 
@@ -121,6 +134,8 @@
     /********************************** 工具函数-结束 **********************************/
 
     /********************************** 主流程-开始 **********************************/
+
+    /********************************** 操作页面-开始 **********************************/
     function addMainBtn() {
         const btnHtml = `<span>
 <a id="mainBtn" class="al-main-btn" href="javascript:void(0);">
@@ -128,105 +143,8 @@
 </a>
 </span>`
 
-        const login = $('.login')
-        login.prepend(btnHtml)
-    }
-
-    async function addAccount() {
-        const { value: formValues } = await Swal.mixin({
-            input: 'text',
-            confirmButtonText: 'Next &rarr;',
-            showCancelButton: true,
-            progressSteps: ['1', '2', '3']
-        })
-            .queue([
-                {
-                    title: '请输入要自动登录的账户名',
-                },
-                {
-                    title: '请输入密码',
-                    text: '如果忘记密码，可以用其他账户在【操作员管理】进行重置密码操作'
-                },
-                {
-                    title: '请输入密钥',
-                    html: 'PAY_BOSS 密钥查询SQL:<pre class="al-pre">SELECT SECRET_KEY FROM BOSS_OPERATOR WHERE LOGIN_NAME = \'用户名\'</pre>'
-                },
-            ])
-
-        if (formValues) {
-            const [username, password, secretKey] = formValues
-            let accountList = await localforage.getItem(LOCALSTORAGE_NAME)
-            accountList = Array.isArray(accountList) ? accountList : []
-            accountList.push({ username, password, secretKey })
-            localforage.setItem(LOCALSTORAGE_NAME, accountList)
-        }
-    }
-
-    async function configAccount() {
-        const accountList = await localforage.getItem(LOCALSTORAGE_NAME)
-        let bodyRowHTML = ''
-        const emptyHTML = `<div class="table--empty">暂无数据</div>`
-        accountList.forEach((item, index) => {
-            bodyRowHTML += `
-            <tr>
-                <td>${index + 1}</td>
-                <td>${item.username}</td>
-                <td>${item.password}</td>
-                <td>${item.secretKey}</td>
-                <td>
-                    <a class="al-icon-selected ${item.isActive ? 'active' : ''}" 
-                        href="javascript:void(0);" onclick="_selectAccount(this,${index})">
-                        <i class="ivu-icon ivu-icon-md-checkmark-circle-outline"></i>
-                    </a>
-                    <a href="javascript:void(0);" onclick="_deleteAccount(this,${index})">
-                        <i class="ivu-icon ivu-icon-md-trash"></i>
-                    </a>
-                </td>
-            </tr>`
-        })
-
-
-        const tableHTML = `
-        <table class="my_baidu_link_table">
-            <thead>
-                <tr>
-                    <th><i class="ivu-icon ivu-icon-md-at"></i></th>
-                    <th><b>账户名</b></th>
-                    <th><b>密码</b></th>
-                    <th><b>密钥</b></th>
-                    <th><b>操作</b></th>
-                </tr>
-            </thead>
-            <tbody>
-                ${bodyRowHTML}
-            </tbody>
-        </table>
-        `
-        Swal.fire({
-            title: '账户列表',
-            html: accountList.length ? tableHTML : emptyHTML,
-        })
-    }
-
-    async function deleteAccount(element, index) {
-        let accountList = await localforage.getItem(LOCALSTORAGE_NAME)
-        const currentRow = element.parentElement.parentElement
-        currentRow.remove()
-        accountList.splice(index, 1)
-        localforage.setItem(LOCALSTORAGE_NAME, accountList)
-        refreshMenu()
-    }
-
-    async function selectAccount(element, index) {
-        let accountList = await localforage.getItem(LOCALSTORAGE_NAME)
-        accountList.forEach(item => {
-            item.isActive = false
-        })
-        accountList[index].isActive = true
-        await localforage.setItem(LOCALSTORAGE_NAME, accountList)
-        $('.al-icon-selected.active').removeClass('active')
-        $(element).addClass('active')
-        refreshMenu()
+        const app = $('#app')
+        app.prepend(btnHtml)
     }
 
     function refreshMenu() {
@@ -235,30 +153,18 @@
         initMenu()
     }
 
-    function init() {
-        unsafeWindow._deleteAccount = deleteAccount
-        unsafeWindow._selectAccount = selectAccount
-        return new Promise((resolve) => {
-            const timer = setInterval(() => {
-                APP_INSTANCE = document.querySelector('#app').__vue__
-                if (APP_INSTANCE) {
-                    clearInterval(timer)
-                    resolve(APP_INSTANCE)
-                }
-            }, 500)
-        })
-    }
-
     async function initMenu() {
-        const accountList = await localforage.getItem(LOCALSTORAGE_NAME)
+        let accountList = await localforage.getItem(LOCALSTORAGE_NAME)
         const selector = $('.al-main-btn')
-        const isEmptyList = !accountList || !accountList.length
-        if (isEmptyList) {
+
+        if (!accountList) {
             await localforage.setItem(LOCALSTORAGE_NAME, [])
         }
+        accountList = accountList || []
+
         const activeAccount = accountList.find(item => item.isActive)
         const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
-        selector.data('hasActiveAccount', !activeAccount)
+        selector.data('hasActiveAccount', Boolean(activeAccount))
         selector.data('isAutoLogin', isAutoLogin)
 
         const currentAccountItem = {
@@ -270,7 +176,7 @@
                 login()
             },
             disabled(key, opt) {
-                return this.data('hasActiveAccount')
+                return !this.data('hasActiveAccount') || this.data('afterLogin')
             }
         }
         const viewAccountItem = {
@@ -335,6 +241,145 @@
         });
     }
 
+    function afterLogin(route) {
+        const $MainBtnEl = $('.al-main-btn')
+        if (route.path === '/login') {
+            $MainBtnEl.removeClass('after-login')
+            $MainBtnEl.data('afterLogin', false)
+        } else {
+            $MainBtnEl.addClass('after-login')
+            $MainBtnEl.data('afterLogin', true)
+        }
+    }
+
+    /********************************** 操作页面-结束 **********************************/
+
+    /********************************** 账户管理-开始 **********************************/
+    async function addAccount() {
+        const { value: formValues } = await Swal.mixin({
+            input: 'text',
+            confirmButtonText: 'Next &rarr;',
+            showCancelButton: true,
+            progressSteps: ['1', '2', '3']
+        })
+            .queue([
+                {
+                    title: '请输入要自动登录的账户名',
+                },
+                {
+                    title: '请输入密码',
+                    text: '如果忘记密码，可以用其他账户在【操作员管理】进行重置密码操作'
+                },
+                {
+                    title: '请输入密钥',
+                    html: 'PAY_BOSS 密钥查询SQL:<pre class="al-pre">SELECT SECRET_KEY FROM BOSS_OPERATOR WHERE LOGIN_NAME = \'用户名\'</pre>'
+                },
+            ])
+
+        if (formValues) {
+            const [username, password, secretKey] = formValues
+            let accountList = await localforage.getItem(LOCALSTORAGE_NAME)
+            accountList = Array.isArray(accountList) ? accountList : []
+            accountList.forEach(item => {
+                item.isActive = false
+            })
+            accountList.push({ username, password, secretKey, isActive: true })
+            await localforage.setItem(LOCALSTORAGE_NAME, accountList)
+            refreshMenu()
+        }
+    }
+
+    async function configAccount() {
+        const accountList = await localforage.getItem(LOCALSTORAGE_NAME)
+        let bodyRowHTML = ''
+        const emptyHTML = `<div class="table--empty">暂无数据</div>`
+        accountList.forEach((item, index) => {
+            bodyRowHTML += `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${item.username}</td>
+                <td>${item.password}</td>
+                <td>${item.secretKey}</td>
+                <td>
+                    <a class="al-icon-selected ${item.isActive ? 'active' : ''}" 
+                        href="javascript:void(0);" onclick="_selectAccount(this,${index})">
+                        <i class="ivu-icon ivu-icon-md-checkmark-circle-outline"></i>
+                    </a>
+                    <a href="javascript:void(0);" onclick="_deleteAccount(this,${index})">
+                        <i class="ivu-icon ivu-icon-md-trash"></i>
+                    </a>
+                </td>
+            </tr>`
+        })
+
+
+        const tableHTML = `
+        <table class="my_baidu_link_table">
+            <thead>
+                <tr>
+                    <th><i class="ivu-icon ivu-icon-md-at"></i></th>
+                    <th><b>账户名</b></th>
+                    <th><b>密码</b></th>
+                    <th><b>密钥</b></th>
+                    <th><b>操作</b></th>
+                </tr>
+            </thead>
+            <tbody>
+                ${bodyRowHTML}
+            </tbody>
+        </table>
+        `
+        Swal.fire({
+            title: '账户列表',
+            html: accountList.length ? tableHTML : emptyHTML,
+        })
+    }
+
+    async function deleteAccount(element, index) {
+        let accountList = await localforage.getItem(LOCALSTORAGE_NAME)
+        const currentRow = element.parentElement.parentElement
+        currentRow.remove()
+        accountList.splice(index, 1)
+        await localforage.setItem(LOCALSTORAGE_NAME, accountList)
+        refreshMenu()
+    }
+
+    async function selectAccount(element, index) {
+        let accountList = await localforage.getItem(LOCALSTORAGE_NAME)
+        accountList.forEach(item => {
+            item.isActive = false
+        })
+        accountList[index].isActive = true
+        await localforage.setItem(LOCALSTORAGE_NAME, accountList)
+        $('.al-icon-selected.active').removeClass('active')
+        $(element).addClass('active')
+        refreshMenu()
+    }
+
+    /********************************** 账户管理-结束 **********************************/
+
+    /**
+     * 初始化，注册函数，等待vue加载完毕
+     * @returns {Promise}
+     */
+    function init() {
+        unsafeWindow._deleteAccount = deleteAccount
+        unsafeWindow._selectAccount = selectAccount
+        return new Promise((resolve) => {
+            const timer = setInterval(() => {
+                APP_INSTANCE = document.querySelector('#app').__vue__
+                if (APP_INSTANCE) {
+                    clearInterval(timer)
+                    resolve(APP_INSTANCE)
+                }
+            }, 500)
+        })
+    }
+
+    function watchRoute(router, fn) {
+        router.beforeEach(fn)
+    }
+
     /********************************** 登录操作-开始 **********************************/
     async function firstLogin(account) {
         let { username, password } = account
@@ -367,7 +412,8 @@
         firstLogin({ username, password })
         secondaryValidate(secretKey)
     }
-    /********************************** 登录操作-开始 **********************************/
+
+    /********************************** 登录操作-结束 **********************************/
 
     async function autoLogin() {
         const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
@@ -393,6 +439,11 @@
         await wait(1)
         addMainBtn()
         initMenu()
+        watchRoute(APP_INSTANCE.$router, (to, from, next) => {
+            afterLogin(to)
+            next()
+        })
+        afterLogin(APP_INSTANCE.$route)
         isAutoLogin && login()
     }
 
@@ -400,11 +451,6 @@
 
     autoLogin()
 
-    window.addEventListener('pushState', function (event) {
-        if (location.hash === '#/login' || location.pathname === '/login') {
-            main()
-        }
-    });
 
     /********************************** 主流程-结束 **********************************/
 
