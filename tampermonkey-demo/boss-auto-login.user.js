@@ -406,11 +406,14 @@
     }
 
     async function login() {
-        const accountList = await localforage.getItem(LOCALSTORAGE_NAME)
-        const activeAccount = accountList.find(item => item.isActive)
-        const { username, password, secretKey } = activeAccount
-        firstLogin({ username, password })
-        secondaryValidate(secretKey)
+        // 仅在登录页生效
+        if (location.hash === '#/login' || location.pathname === '/login') {
+            const accountList = await localforage.getItem(LOCALSTORAGE_NAME)
+            const activeAccount = accountList.find(item => item.isActive)
+            const { username, password, secretKey } = activeAccount
+            firstLogin({ username, password })
+            secondaryValidate(secretKey)
+        }
     }
 
     /********************************** 登录操作-结束 **********************************/
@@ -423,15 +426,11 @@
         // 监听事件
         window.addEventListener('replaceState', async function (event) {
             const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
-            if (location.hash === '#/login' || location.pathname === '/login') {
-                isAutoLogin && login()
-            }
+            isAutoLogin && login()
         });
         window.addEventListener('pushState', async function (event) {
             const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
-            if (location.hash === '#/login' || location.pathname === '/login') {
-                isAutoLogin && login()
-            }
+            isAutoLogin && login()
         });
     }
 
