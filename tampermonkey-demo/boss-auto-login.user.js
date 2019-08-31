@@ -406,6 +406,10 @@
     }
 
     async function login() {
+        // 仅在登录页生效
+        if (location.hash !== '#/login' || location.pathname !== '/login') {
+            return
+        }
         const accountList = await localforage.getItem(LOCALSTORAGE_NAME)
         const activeAccount = accountList.find(item => item.isActive)
         const { username, password, secretKey } = activeAccount
@@ -423,15 +427,11 @@
         // 监听事件
         window.addEventListener('replaceState', async function (event) {
             const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
-            if (location.hash === '#/login' || location.pathname === '/login') {
-                isAutoLogin && login()
-            }
+            isAutoLogin && login()
         });
         window.addEventListener('pushState', async function (event) {
             const isAutoLogin = await localforage.getItem(LOCALSTORAGE_IS_AUTO_LOGIN)
-            if (location.hash === '#/login' || location.pathname === '/login') {
-                isAutoLogin && login()
-            }
+            isAutoLogin && login()
         });
     }
 
