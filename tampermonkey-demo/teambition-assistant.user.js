@@ -22,6 +22,76 @@
 // @run-at       document-body
 // @noframes
 // ==/UserScript==
-(function () {
-    console.log('test');
+(async function () {
+    /********************************** 工具函数-开始 **********************************/
+        // ajax请求Promise化
+    const jqPromiseAjax = params => {
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    url: params.url,
+                    type: params.type || 'get',
+                    dataType: 'json',
+                    headers: params.headers || {},
+                    data: params.data || {},
+                    success(res) {
+                        res.message && notify(res.message)
+                        resolve(res)
+                    },
+                    error(err) {
+                        err.message && notify(err.message)
+                        reject(err)
+                    }
+                })
+            })
+        }
+
+    // toast提示
+    function notify(type = 'success', content = '操作成功') {
+        // warning, error, success, info, and question
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+
+        Toast.fire({
+            type: type,
+            title: content
+        })
+    }
+
+    /********************************** 工具函数-结束 **********************************/
+
+    /********************************** API-开始 **********************************/
+    // ajax全局配置
+    $.ajaxSetup({
+        dataType: "json",
+        cache: false,
+        xhrFields: {
+            withCredentials: true
+        },
+        complete: function (xhr) {
+            // console.log(xhr, "xhr")
+        }
+    });
+    const baseURL = 'https://www.teambition.com'
+
+    const getUserInfo = (data) => {
+        return jqPromiseAjax({
+            url: baseURL + '/api/users/me',
+            type: 'get',
+            data
+        })
+    }
+    /********************************** API-结束 **********************************/
+
+    /********************************** 主流程-开始 **********************************/
+    const data = await getUserInfo()
+    const userInfo = {
+        id: data._id,
+        avatarUrl: data.avatarUrl,
+        name: data.name
+    }
+    /********************************** 主流程-结束 **********************************/
 })()
