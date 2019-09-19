@@ -103,6 +103,33 @@
             transform: scaleX(1);
             transform-origin: top center;
         }
+
+        /* 从划入划出点开始划线 */
+        .underline-wrapper {
+            position: relative;
+            width: 70px;
+            height: 50px;
+            line-height: 50px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .underline-wrapper:after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 2px;
+            background-color: #2185F0;
+            transform: scaleX(0);
+            transform-origin: var(--hoverX) center;
+            transition: transform 0.3s;
+        }
+
+        .underline-wrapper:hover:after {
+            transform: scaleX(1);
+        }
     </style>
 </head>
 <body>
@@ -122,5 +149,24 @@
     <span class="underline--top-trace"></span>
     <span class="underline--bottom-trace"></span>
 </div>
+
+<h5>TalkingData Hover</h5>
+<hr>
+<div class="underline-wrapper">鼠标划入</div>
+
+<script>
+const underlineEl = document.querySelector('.underline-wrapper')
+const hoverXVarName = '--hoverX'
+const setHoverX = (event) => {
+    // 计算鼠标划入相对于盒子的横坐标
+    const boxClientX = event.target.getBoundingClientRect().x
+    const hoverClientX = event.clientX
+    const hoverX = hoverClientX - boxClientX
+    event.target.style = `${hoverXVarName}: ${hoverX}px`
+}
+// 监听事件
+underlineEl.addEventListener('mouseenter', setHoverX)
+underlineEl.addEventListener('mouseout', setHoverX)
+</script>
 </body>
 </html>
