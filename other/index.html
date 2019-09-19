@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Other</title>
+    <style>
+        .input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .input-wrapper input {
+            outline: none;
+            border: none;
+        }
+
+        /* 划线动态 */
+        .underline--bottom {
+            position: absolute;
+            /* left：0 right:0 -> 宽度100% */
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 1px;
+            background-color: #000000;
+            /* 避免回流 */
+            transform: scaleX(0);
+            /* 左进右出 */
+            transform-origin: right center;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .input--underline:focus ~ .underline--bottom {
+            transform: scaleX(1);
+            transform-origin: left center;
+        }
+
+        /* 动态边框 */
+        .underline--bottom-trace,
+        .underline--left-trace,
+        .underline--right-trace,
+        .underline--top-trace {
+            position: absolute;
+            background-color: #000;
+            transition: transform 0.1s ease-in-out;
+        }
+
+        .underline--left-trace,
+        .underline--right-trace {
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            transform: scaleY(0);
+        }
+
+        .underline--top-trace,
+        .underline--bottom-trace {
+            left: 0;
+            right: 0;
+            height: 1px;
+            transform: scaleX(0);
+        }
+
+        .underline--bottom-trace {
+            bottom: 0;
+            transform-origin: right center;
+        }
+
+        .input--underline:focus ~ .underline--bottom-trace {
+            transform: scaleX(1);
+            transform-origin: left center;
+        }
+
+        .underline--right-trace {
+            right: 0;
+            transform-origin: top center;
+            transition-delay: 0.1s;
+        }
+
+        .input--underline:focus ~ .underline--right-trace {
+            transform: scaleX(1);
+            transform-origin: bottom center;
+        }
+
+        .underline--top-trace {
+            top: 0;
+            transform-origin: left center;
+            transition-delay: 0.2s;
+        }
+
+        .input--underline:focus ~ .underline--top-trace {
+            transform: scaleX(1);
+            transform-origin: right center;
+        }
+
+        .underline--left-trace {
+            left: 0;
+            transform-origin: bottom center;
+            transition-delay: 0.3s;
+        }
+
+        .input--underline:focus ~ .underline--left-trace {
+            transform: scaleX(1);
+            transform-origin: top center;
+        }
+    </style>
+</head>
+<body>
+<h5>Dynamic Underline</h5>
+<hr>
+<div class="input-wrapper">
+    <input class="input--underline" type="text" placeholder="please focus">
+    <span class="underline--bottom"></span>
+</div>
+
+<h5>Dynamic Trace</h5>
+<hr>
+<div class="input-wrapper">
+    <input class="input--underline" type="text" placeholder="please focus">
+    <span class="underline--left-trace"></span>
+    <span class="underline--right-trace"></span>
+    <span class="underline--top-trace"></span>
+    <span class="underline--bottom-trace"></span>
+</div>
+</body>
+</html>
