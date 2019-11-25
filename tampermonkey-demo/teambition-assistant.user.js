@@ -24,15 +24,11 @@
 // ==/UserScript==
 (async function () {
 
-    /********************************** 主流程-开始 **********************************/
-    const data = await getUserInfo()
-    console.log(data, "data")
-    const userInfo = {
-        id: data._id,
-        avatarUrl: data.avatarUrl,
-        name: data.name
-    }
-    /********************************** 主流程-结束 **********************************/
+
+
+    /********************************** CSS相关-开始 **********************************/
+    GM_addStyle(`.trigger-btn{ position: fixed; right: 0; top: 50%; transform: translateY(-50%); border-radius: 8px 0 0 8px; width: 50px; height: 50px; background-image: url("https://tcs.teambition.net/thumbnail/111m49f5d454a8c0e22efc2a8d448db612e2/w/220/h/220"); background-size: 100% 100%; cursor: pointer; text-shadow: 0 2px 2px grey; box-shadow: 0 0.2em 0 rgba(12,119,226,0.3), 0 0.2em 0.2em grey;border-color: transparent;border-top: 0;border-right: 0;z-index: 1;outline: 0}`)
+    /********************************** CSS相关-结束 **********************************/
 
     /********************************** 工具函数-开始 **********************************/
         // ajax请求Promise化
@@ -103,8 +99,24 @@
     /********************************** 数据准备-结束 **********************************/
 
     /********************************** UI绘制-开始 **********************************/
-
+    addTriggerBtn()
     /********************************** UI绘制-结束 **********************************/
 
+    /********************************** 主流程-开始 **********************************/
+    const data = await getUserInfo()
+    console.log(data, "data")
+    const userInfo = {
+        id: data._id,
+        avatarUrl: data.avatarUrl,
+        name: data.name
+    }
 
+    function addTriggerBtn() {
+        const container = $('#teambition-web-content')
+        console.log(container, "container")
+        const btn = $('<button></button>')
+        btn.addClass('trigger-btn')
+        container.append(btn)
+    }
+    /********************************** 主流程-结束 **********************************/
 })()
