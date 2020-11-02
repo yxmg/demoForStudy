@@ -2,19 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0"/>
     <title>测试滚动穿透（scroll-chaining）</title>
     <link rel="stylesheet" href="./index.css">
 </head>
 <body>
 <main class="page-container">
     <div class="scroll-content">
-        <button class="my-button">打开浮层</button>
-        <button class="my-button">打开模态框</button>
+        <button class="my-button open-mask">打开浮层</button>
+        <button class="my-button open-modal">打开模态框</button>
+
+
+        <div class="modal"></div>
     </div>
 </main>
+<div class="mask" style="display: none"></div>
+<script type="text/javascript" src="../lib/jquery.js"></script>
 <script>
+$('.my-button.open-mask').click(function () {
+    $('.mask').show()
+})
 
+$('.mask').click(function () {
+    $('.mask').hide()
+})
 </script>
 </body>
 </html>

@@ -28,7 +28,7 @@ body {
 }
 
 .my-button:focus,
-.my-button:hover{
+.my-button:hover {
   background: #66b1ff;
   border-color: #beddfd;
   color: #fff;
@@ -38,4 +38,14 @@ body {
   background: #3a8ee6;
   border-color: #3a8ee6;
   color: #fff;
+}
+
+.mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999;
+  background: rgba(0, 0, 0, 0.5);
 }
