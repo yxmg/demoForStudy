@@ -12,19 +12,34 @@
         <button class="my-button open-mask">打开浮层</button>
         <button class="my-button open-modal">打开模态框</button>
 
-
-        <div class="modal"></div>
+        <div class="modal-wrapper" style="display: none">
+            <div class="modal">
+                <span class="text-modal">模态框</span>
+            </div>
+        </div>
     </div>
 </main>
-<div class="mask" style="display: none"></div>
+<div class="mask" style="display:none;">
+    <span class="text-mask">MASK</span>
+</div>
 <script type="text/javascript" src="../lib/jquery.js"></script>
 <script>
+// 浮层
 $('.my-button.open-mask').click(function () {
-    $('.mask').show()
+    $('.mask').fadeIn()
+})
+$('.mask').click(function () {
+    $('.mask').fadeOut()
 })
 
-$('.mask').click(function () {
-    $('.mask').hide()
+// 模态框
+$('.my-button.open-modal').click(function () {
+    $('.mask').fadeIn()
+    $('.modal-wrapper').fadeIn(100)
+})
+$('.modal-wrapper').click(function () {
+    $('.modal-wrapper').fadeOut()
+    $('.mask').fadeOut()
 })
 </script>
 </body>
