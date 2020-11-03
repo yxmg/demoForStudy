@@ -10,57 +10,54 @@
 <body>
 <main class="page-container" id="app">
     <div class="scroll-content">
-        <el-button type="primary" @click="openMask">打开浮层</el-button>
+        <el-button type="primary" @click="openMask" style="margin-top: 100px">打开浮层</el-button>
         <el-button type="primary" @click="openModal">打开模态框</el-button>
         <div style="margin-top: 10px;">
-            <el-switch active-text="滚动锁定" v-model="isLockScroll">
+            <el-switch active-text="PC滚动锁定" v-model="isLockScroll">
             </el-switch>
         </div>
 
 
-        <div class="modal-wrapper" style="display: none" @click="closeModal">
+        <div class="modal-wrapper" @click="closeModal" style="display: none">
             <div class="modal">
                 <span class="text-modal">模态框</span>
             </div>
         </div>
     </div>
+    <div class="mask" style="display:none;" @click="closeMask">
+        <span class="text-mask">MASK</span>
+    </div>
 </main>
-<div class="mask" style="display:none;" @click="closeMask">
-    <span class="text-mask">MASK</span>
-</div>
 <script type="text/javascript" src="../lib/vue.js"></script>
 <script type="text/javascript" src="../lib/element/index.js"></script>
 <script type="text/javascript" src="../lib/jquery.js"></script>
 <script>
-// 浮层
-const $maskEl = $('.mask')
-$('.my-button.open-mask').click(function () {
-    $('.mask').fadeIn()
-})
-$maskEl.click(function () {
-    $maskEl.fadeOut()
-})
 const Main = {
     data() {
         return {
             dialogVisible: false,
-            isLockScroll: false
+            isLockScroll: false,
+            eleVisible: false
         };
     },
     methods: {
         openMask() {
-            $maskEl.fadeIn()
+            $('.mask').fadeIn()
+            $('body').addClass('ovh')
         },
         closeMask() {
-            $maskEl.fadeOut()
+            $('.mask').fadeOut()
+            $('body').removeClass('ovh')
         },
         openModal() {
-            $maskEl.fadeIn()
+            $('.mask').fadeIn()
             $('.modal-wrapper').fadeIn(100)
+            this.isLockScroll && $('body').addClass('ovh')
         },
         closeModal() {
-            $maskEl.fadeOut()
+            $('.mask').fadeOut()
             $('.modal-wrapper').fadeOut(100)
+            this.isLockScroll && $('body').removeClass('ovh')
         }
     }
 };
