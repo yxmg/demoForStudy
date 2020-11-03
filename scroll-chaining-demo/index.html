@@ -5,42 +5,67 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0"/>
     <title>测试滚动穿透（scroll-chaining）</title>
     <link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="../lib/element/index.css">
 </head>
 <body>
-<main class="page-container">
+<main class="page-container" id="app">
     <div class="scroll-content">
-        <button class="my-button open-mask">打开浮层</button>
-        <button class="my-button open-modal">打开模态框</button>
+        <el-button type="primary" @click="openMask">打开浮层</el-button>
+        <el-button type="primary" @click="openModal">打开模态框</el-button>
+        <div style="margin-top: 10px;">
+            <el-switch active-text="滚动锁定" v-model="isLockScroll">
+            </el-switch>
+        </div>
 
-        <div class="modal-wrapper" style="display: none">
+
+        <div class="modal-wrapper" style="display: none" @click="closeModal">
             <div class="modal">
                 <span class="text-modal">模态框</span>
             </div>
         </div>
     </div>
 </main>
-<div class="mask" style="display:none;">
+<div class="mask" style="display:none;" @click="closeMask">
     <span class="text-mask">MASK</span>
 </div>
+<script type="text/javascript" src="../lib/vue.js"></script>
+<script type="text/javascript" src="../lib/element/index.js"></script>
 <script type="text/javascript" src="../lib/jquery.js"></script>
 <script>
 // 浮层
+const $maskEl = $('.mask')
 $('.my-button.open-mask').click(function () {
     $('.mask').fadeIn()
 })
-$('.mask').click(function () {
-    $('.mask').fadeOut()
+$maskEl.click(function () {
+    $maskEl.fadeOut()
 })
-
-// 模态框
-$('.my-button.open-modal').click(function () {
-    $('.mask').fadeIn()
-    $('.modal-wrapper').fadeIn(100)
-})
-$('.modal-wrapper').click(function () {
-    $('.modal-wrapper').fadeOut()
-    $('.mask').fadeOut()
-})
+const Main = {
+    data() {
+        return {
+            dialogVisible: false,
+            isLockScroll: false
+        };
+    },
+    methods: {
+        openMask() {
+            $maskEl.fadeIn()
+        },
+        closeMask() {
+            $maskEl.fadeOut()
+        },
+        openModal() {
+            $maskEl.fadeIn()
+            $('.modal-wrapper').fadeIn(100)
+        },
+        closeModal() {
+            $maskEl.fadeOut()
+            $('.modal-wrapper').fadeOut(100)
+        }
+    }
+};
+const Ctor = Vue.extend(Main)
+new Ctor().$mount('#app')
 </script>
 </body>
 </html>
