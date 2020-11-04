@@ -16,6 +16,9 @@
             <el-switch active-text="PC滚动锁定" v-model="isLockScroll">
             </el-switch>
         </div>
+        <div class="right-part" style="float: right;width: 100px;height: 100px;background-color:#fff;text-align:center;font-weight:bold;">
+            测试滚动条出现时页面抖动
+        </div>
 
 
         <div class="modal-wrapper" @click="closeModal" style="display: none">
@@ -52,6 +55,7 @@ const Main = {
         openModal() {
             $('.mask').fadeIn()
             $('.modal-wrapper').fadeIn(100)
+            // 会有滚动条消失的跳动问题，通过计算滚动条宽度，累加到body原来的paddingRight即可解决 这里暂不做处理
             this.isLockScroll && $('body').addClass('ovh')
         },
         closeModal() {

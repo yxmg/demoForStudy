@@ -4,7 +4,8 @@ body {
 }
 
 .page-container {
-  padding: 20px;
+  padding-top: 20px;
+  padding-left: 20px;
   min-height: 100vh;
   background-image: linear-gradient(135deg, #FEB692 10%, #EA5455 100%);
   box-sizing: border-box;
@@ -94,3 +95,4 @@ body {
 .ovh {
   overflow: hidden;
 }
+
