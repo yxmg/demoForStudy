@@ -13,7 +13,11 @@
         <el-button type="primary" @click="openMask" style="margin-top: 100px">打开浮层</el-button>
         <el-button type="primary" @click="openModal">打开模态框</el-button>
         <div style="margin-top: 10px;">
-            <el-switch active-text="PC滚动锁定" v-model="isLockScroll">
+            <el-switch active-text="PC滚动锁定" v-model="isPCLockScroll">
+            </el-switch>
+        </div>
+        <div style="margin-top: 10px;">
+            <el-switch active-text="移动滚动锁定" v-model="isMobileLockScroll">
             </el-switch>
         </div>
         <div class="right-part"
@@ -24,6 +28,7 @@
         <div class="modal-wrapper" @click="closeModal" style="display: none">
             <div class="modal">
                 <span class="text-modal">模态框</span>
+                <div class="scroll-content"></div>
             </div>
         </div>
     </div>
@@ -39,9 +44,11 @@ const Main = {
     data() {
         return {
             dialogVisible: false,
-            isLockScroll: false,
+            isPCLockScroll: false,
+            isMobileLockScroll: false,
             eleVisible: false,
-            bodyPaddingRight: 0
+            bodyPaddingRight: 0,
+            eventListeners: []
         };
     },
     methods: {
@@ -51,28 +58,58 @@ const Main = {
         },
         closeMask() {
             $('.mask').fadeOut()
+            $('.modal-wrapper').fadeOut()
             $('body').removeClass('ovh')
         },
         openModal() {
             $('.mask').fadeIn()
             $('.modal-wrapper').fadeIn(100)
 
-            const scrollBarWidth = window.innerWidth - document.body.clientWidth
-            this.bodyPaddingRight = parseInt(getComputedStyle(document.body).paddingRight, 10)
-            const isOverScroll = document.documentElement.clientHeight < document.body.scrollHeight
-            if (isOverScroll) {
-                document.body.style.paddingRight = this.bodyPaddingRight + scrollBarWidth + 'px'
+            if (this.isPCLockScroll) {
+                const scrollBarWidth = window.innerWidth - document.body.clientWidth
+                this.bodyPaddingRight = parseInt(getComputedStyle(document.body).paddingRight, 10)
+                const isOverScroll = document.documentElement.clientHeight < document.body.scrollHeight
+                if (isOverScroll) {
+                    document.body.style.paddingRight = this.bodyPaddingRight + scrollBarWidth + 'px'
+                }
+                // 会有滚动条消失的跳动问题，通过计算滚动条宽度，累加到body原来的paddingRight即可解决
+                $('body').addClass('ovh')
             }
-            // 会有滚动条消失的跳动问题，通过计算滚动条宽度，累加到body原来的paddingRight即可解决
-            this.isLockScroll && $('body').addClass('ovh')
+
+            if (this.isMobileLockScroll) {
+                // 方案一，简单粗暴，体验上有问题，滚动距离无法保留
+                // $('html').addClass('modal-open')
+                // $('body').addClass('modal-open')
+                // 阻止移动端touch事件
+                this.eventListeners[0] = document.querySelector('.mask').addEventListener(
+                    'touchmove',
+                    (e) => {
+                        e.preventDefault();
+                    }, { passive: false })
+                // 阻止dialog滚动
+                this.eventListeners[1] = document.querySelector('.modal').addEventListener(
+                    'touchmove',
+                    (e) => {
+                        e.preventDefault();
+                    }, { passive: false })
+            }
+
         },
         closeModal() {
             $('.mask').fadeOut()
             $('.modal-wrapper').fadeOut(100)
-
-            document.body.style.paddingRight = this.bodyPaddingRight + 'px'
-            this.isLockScroll && $('body').removeClass('ovh')
-
+            if (this.isPCLockScroll) {
+                document.body.style.paddingRight = this.bodyPaddingRight + 'px'
+                $('body').removeClass('ovh')
+            }
+            if (this.isMobileLockScroll) {
+                // 简单粗暴，体验上有问题，滚动距离无法保留
+                // $('html').removeClass('modal-open')
+                // $('body').removeClass('modal-open')
+                // 取消阻止移动端touch事件
+                document.querySelector('.mask').removeEventListener('touchmove', this.eventListeners[0])
+                document.querySelector('.modal').removeEventListener('touchmove', this.eventListeners[1])
+            }
         }
     }
 };
