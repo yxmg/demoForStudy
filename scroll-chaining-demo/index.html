@@ -20,16 +20,15 @@
             <el-switch active-text="移动滚动锁定" v-model="isMobileLockScroll">
             </el-switch>
         </div>
+
         <div class="right-part"
              style="float: right;width: 100px;height: 100px;background-color:#fff;text-align:center;font-weight:bold;">
             测试滚动条出现时页面抖动
         </div>
 
-        <div class="modal-wrapper" @click="closeModal" style="display: none">
-            <div class="modal">
-                <span class="text-modal">模态框</span>
-                <div class="scroll-content"></div>
-            </div>
+        <div class="modal" style="display: none;">
+            <span class="text-modal">Modal</span>
+            <div class="scroll-content"></div>
         </div>
     </div>
     <div class="mask" style="display:none;" @click="closeMask">
@@ -60,10 +59,11 @@ const Main = {
             $('.mask').fadeOut()
             $('.modal-wrapper').fadeOut()
             $('body').removeClass('ovh')
+            this.closeModal()
         },
         openModal() {
             $('.mask').fadeIn()
-            $('.modal-wrapper').fadeIn(100)
+            $('.modal').fadeIn(100)
 
             if (this.isPCLockScroll) {
                 const scrollBarWidth = window.innerWidth - document.body.clientWidth
@@ -86,18 +86,19 @@ const Main = {
                     (e) => {
                         e.preventDefault();
                     }, { passive: false })
+                this.eliminateDialogEffect()
                 // 阻止dialog滚动
-                this.eventListeners[1] = document.querySelector('.modal').addEventListener(
-                    'touchmove',
-                    (e) => {
-                        e.preventDefault();
-                    }, { passive: false })
+                // this.eventListeners[1] = document.querySelector('.modal').addEventListener(
+                //     'touchmove',
+                //     (e) => {
+                //         e.preventDefault();
+                //     }, { passive: false })
             }
 
         },
         closeModal() {
             $('.mask').fadeOut()
-            $('.modal-wrapper').fadeOut(100)
+            $('.modal').fadeOut(100)
             if (this.isPCLockScroll) {
                 document.body.style.paddingRight = this.bodyPaddingRight + 'px'
                 $('body').removeClass('ovh')
@@ -108,8 +109,35 @@ const Main = {
                 // $('body').removeClass('modal-open')
                 // 取消阻止移动端touch事件
                 document.querySelector('.mask').removeEventListener('touchmove', this.eventListeners[0])
-                document.querySelector('.modal').removeEventListener('touchmove', this.eventListeners[1])
+                // document.querySelector('.modal').removeEventListener('touchmove', this.eventListeners[1])
             }
+        },
+        // 消除Dialog滚动影响
+        eliminateDialogEffect() {
+            let startY = 0
+            const modalEl = document.querySelector('.modal')
+            const modalHeight = modalEl.clientHeight
+            const modalScrollHeight = modalEl.scrollHeight
+            modalEl.addEventListener("touchstart", e => {
+                startY = e.touches[0].pageY
+            })
+
+            modalEl.addEventListener('touchmove', (e) => {
+                const endY = e.touches[0].pageY
+                const delta = endY - startY
+                const scrollTop = modalEl.scrollTop
+                // 判断是否到顶或到底 到顶阻止往下滑,到底阻止往上滑
+                const isTop = scrollTop === 0
+                const isBottom = scrollTop >= modalScrollHeight - modalHeight
+                const isToTopSlide = delta < 0
+                const isToBottomSlide = delta > 0
+                if (
+                    (isTop && isto)
+                    || (isBottom && isToTopSlide)
+                ) {
+                    e.preventDefault()
+                }
+            }, { passive: false })
         }
     }
 };

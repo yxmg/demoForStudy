@@ -61,23 +61,12 @@ body {
   font-weight: bold;
 }
 
-.modal-wrapper {
-  /*position: fixed;*/
-  /*top: 0;*/
-  /*left: 0;*/
-  /*bottom: 0;*/
-  /*right: 0;*/
-  /*overflow: auto;*/
-  /*margin: 0;*/
-  /*z-index: 1000;*/
-}
-
 .modal {
-  position: absolute;
-  top: 0;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: calc(100% - 100px);
-  margin: 200px auto 50px;
-  min-height: 300px;
   background-color: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
   box-sizing: border-box;
