@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>键盘跳转光标</title>
+  <style>
+    .input-wrapper {
+      margin-top: 30px;
+    }
+
+    .input-wrapper input {
+      width: 30%;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>默认</h1>
+  <el-table
+    class="default-table"
+    :data="table.data"
+    style="width: 100%">
+    <el-table-column
+      label="编号"
+      width="180">
+      <template slot-scope="scope">
+        <input type="text">
+      </template>
+    </el-table-column>
+    <el-table-column
+      label="产地"
+      width="180">
+      <template slot-scope="scope">
+        <input type="text">
+      </template>
+    </el-table-column>
+    <el-table-column label="规格">
+      <template slot-scope="scope">
+        <input type="text">
+      </template>
+    </el-table-column>
+    <el-table-column label="材质">
+      <template slot-scope="scope">
+        <input type="text">
+      </template>
+    </el-table-column>
+  </el-table>
+  <h1>指令封装</h1>
+  <el-table v-cursor-control
+    :data="table.data"
+    style="width: 100%">
+    <el-table-column
+      label="编号"
+      width="180">
+      <template slot-scope="scope">
+        <input type="text">
+      </template>
+    </el-table-column>
+    <el-table-column
+      label="产地"
+      width="180">
+      <template slot-scope="scope">
+        <input type="text">
+      </template>
+    </el-table-column>
+    <el-table-column label="规格">
+      <template slot-scope="scope">
+        <input type="text">
+      </template>
+    </el-table-column>
+    <el-table-column label="材质">
+      <template slot-scope="scope">
+        <input type="text">
+      </template>
+    </el-table-column>
+  </el-table>
+  <div class="input-wrapper" v-cursor-control>
+    <input type="text">
+    <input type="text">
+    <input type="text">
+    <input type="text">
+    <input type="text">
+    <input type="text">
+    <input type="text">
+    <input type="text">
+  </div>
+</div>
+
+<script src="https://cdn.bootcdn.net/ajax/libs/vue/2.6.9/vue.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/element-ui/2.14.1/index.min.js"></script>
+<link href="https://cdn.bootcdn.net/ajax/libs/element-ui/2.14.1/theme-chalk/index.min.css" rel="stylesheet">
+
+<script src="directive.js"></script>
+<script src="index.js"></script>
+
+</body>
+</html>
