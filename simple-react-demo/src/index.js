@@ -17,17 +17,31 @@ class IncrementButton extends React.Component {
         this.state = { count: 0 }
     }
 
+    // render() {
+    //     if (this.state.count === 3) {
+    //         return h('button', {}, this.state.count + ' max!')
+    //     }
+    //     return h('button',
+    //         {
+    //             onClick: () => {
+    //                 this.setState({ count: this.state.count + 1 })
+    //             }
+    //         },
+    //         this.state.count)
+    // }
+
+    // JSX写法
     render() {
         if (this.state.count === 3) {
-            return h('button', {}, this.state.count + ' max!')
+            return (<button>{this.state.count + ' max!'}</button>)
         }
-        return h('button',
-            {
-                onClick: () => {
-                    this.setState({ count: this.state.count + 1 })
-                }
-            },
-            this.state.count)
+        return (
+            <button onClick={
+                () => this.setState({ count: this.state.count + 1 })
+            }>
+                {this.state.count}
+            </button>
+        )
     }
 }
 
