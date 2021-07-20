@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>测试Qz基础打印能力</title>
+</head>
+<body>
+<div id="app">
+    <button @click="getAllPrinter">获取打印机列表</button>
+    <ul class="printer-list">
+        <li class="printer-list-item" v-for="printer in printers">
+            {{ printer.name }} {{ printer.default ? '（默认）' : '' }}
+        </li>
+    </ul>
+    <button @click="print">测试打印</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+<script src="./qz-tray.js"></script>
+<script>
+const app = new Vue({
+    el: '#app',
+    data: {
+        printers: [],
+        defaultPrinter: {}
+    },
+    methods: {
+        getAllPrinter() {
+            qz.websocket.connect()
+                .then(() => {
+                    return qz.printers.details()
+                })
+                .then((printers) => {
+                    this.printers = printers
+                    this.defaultPrinter = printers.find(printer => printer.default)
+                })
+                .catch((e) => {
+                    alert(e)
+                })
+        },
+        print() {
+            console.log(qz.websocket.isActive(), "qz.websocket.isActive()")
+            qz.printers.getDefault()
+                .then((printer) => {
+                    const config = qz.configs.create(printer);
+                    qz.print(config, [{
+                        type: 'pixel',
+                        format: 'html',
+                        flavor: 'plain',
+                        data: '<h1>Hello SHOPLINE!</h1>'
+                    }]);
+                })
+                .catch((e) => {
+                    alert(e)
+                })
+        }
+    }
+})
+</script>
+</body>
+</html>
